@@ -3,10 +3,25 @@ import os
 from data_extraction.data_extraction import data_extraction
 from config.config import Config
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import Font, Alignment
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from logger.logger import logger_setup
 
 def excel_writer():
+    # BORDER SETTINGS
+    thick_border = Border(
+        left=Side(style='thick', color='000000'),
+        right=Side(style='thick', color='000000'),
+        top=Side(style='thick', color='000000'),
+        bottom=Side(style='thick', color='000000')
+    )
+
+    thin_border = Border(
+        left=Side(style='thin', color='000000'),
+        right=Side(style='thin', color='000000'),
+        top=Side(style='thin', color='000000'),
+        bottom=Side(style='thin', color='000000')
+    )
+
     # CREATE THE LOGGER SETUP
     logger = logger_setup()
 
@@ -30,8 +45,10 @@ def excel_writer():
 
                 # FORMAT THE COLUMN HEADERS
                 for cell in summary_sheet[1]:
-                    cell.font = Font(bold=True)
+                    cell.font = Font(bold=True, color='FFFFFF')
                     cell.alignment = Alignment(horizontal='center')
+                    cell.fill = PatternFill(fill_type='solid', fgColor='800080')
+                    cell.border = thick_border
 
                 # FORMAT THE WIDTH
                 for column_number, column in enumerate(summary_sheet.columns, start=1):
@@ -43,8 +60,10 @@ def excel_writer():
                     for cell in column:
                         if cell.value is not None:
 
-                            # WRAP THE CELLS
-                            cell.alignment = Alignment(wrap_text=True)
+                            if cell.row != 1:
+                                # WRAP THE CELLS
+                                cell.alignment = Alignment(wrap_text=True)
+                                cell.border = thin_border
 
                             # GET THE LENGTH OF THE CELL TEXT
                             length = len(str(cell.value))
@@ -54,6 +73,13 @@ def excel_writer():
 
                     # ADJUST THE COLUM WIDTH
                     summary_sheet.column_dimensions[column_letter].width = min(max_length + 2, 50)
+
+                # FREEZE PANES
+                summary_sheet.freeze_panes = 'A2'
+
+                # AUTOFILTER
+                summary_sheet.auto_filter.ref = summary_sheet.dimensions
+
         except PermissionError:
             logger.error('Error saving please close the file and try again.')
 
